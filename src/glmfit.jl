@@ -807,6 +807,44 @@ function initialeta!(eta::AbstractVector,
     return eta
 end
 
+function initialeta!(eta::AbstractVector,
+    dist::Bernoulli,
+    link::Link,
+    y::AbstractVector,
+    wts::AbstractVector,
+    off::AbstractVector)
+
+
+n  = length(y)
+lw = length(wts)
+lo = length(off)
+
+if lw == n
+@inbounds @simd for i = eachindex(y, eta, wts)
+μ      = mustart(dist, y[i] + 0.5, wts[i])
+eta[i] = linkfun(link, μ)
+end
+elseif lw == 0
+@inbounds @simd for i = eachindex(y, eta)
+μ      = mustart(dist, y[i] + 0.5, 1)
+eta[i] = linkfun(link, μ)
+end
+else
+throw(ArgumentError("length of wts must be either $n or 0 but was $lw"))
+end
+
+if lo == n
+@inbounds @simd for i = eachindex(eta, off)
+eta[i] -= off[i]
+end
+elseif lo != 0
+throw(ArgumentError("length of off must be either $n or 0 but was $lo"))
+end
+
+return eta
+end
+
+
 # Helper function to check that the values of y are in the allowed domain
 function checky(y, d::Distribution)
     if any(x -> !insupport(d, x), y)
@@ -817,6 +855,13 @@ end
 function checky(y, d::Binomial)
     for yy in y
         0 ≤ yy ≤ 1 || throw(ArgumentError("$yy in y is not in [0,1]"))
+    end
+    return nothing
+end
+
+function checky(y, d::Bernoulli)
+    for yy in y
+        -1 ≤ yy ≤ 1 || throw(ArgumentError("$yy in y is not in [-1,1]"))
     end
     return nothing
 end
