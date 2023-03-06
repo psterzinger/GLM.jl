@@ -451,13 +451,14 @@ true
 function devresid end
 
 function devresid(::Bernoulli, y, μ::Real)
-    if y == 1
+    if 0 < y ≤ 1
         return -2 * log(μ)
-    elseif y == 0
+    elseif -1 ≤ y ≤ 0
         return -2 * log1p(-μ)
     end
-    throw(ArgumentError("y should be 0 or 1 (got $y)"))
+    throw(ArgumentError("y should be in [-1,1] (got $y)"))
 end
+
 function devresid(::Binomial, y, μ::Real)
     if y == 1
         return -2 * log(μ)
